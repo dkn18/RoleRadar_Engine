@@ -1,10 +1,14 @@
 search:
+
   roles:
     - Data Engineer
     - Senior Data Engineer
     - Data Platform Engineer
     - Data Quality Engineer
+    - Data Integration Engineer
     - Azure Data Engineer
+    - Big Data Engineer
+    - Analytics Engineer
 
   locations:
     - Netherlands
@@ -14,6 +18,7 @@ search:
     - Eindhoven
     - The Hague
     - Remote
+    - Europe
 
   required_skills:
     - Python
@@ -29,22 +34,45 @@ search:
     - Synapse
     - ADLS
     - ETL
+    - Data Lake
+    - REST API
+    - Terraform
+    - Git
 
   exclude_words:
     - internship
     - intern
     - unpaid
 
-  max_days_old: 7
+  max_days_old: 30
 
-adzuna:
-  country: nl
-  results_per_page: 50
-  pages: 1
+
+sources:
+
+  greenhouse:
+
+    boards:
+      - dept
+      - workatbackbase
+      - bolcomen
+      - sytac
+      - doitintl
+
+
+  lever:
+
+    companies:
+      - zencore
+      - pattern
+
 
 database:
+
   path: data/roleradar.db
 
+
 reports:
+
   csv: reports/daily_jobs.csv
+
   html: reports/daily_jobs.html
