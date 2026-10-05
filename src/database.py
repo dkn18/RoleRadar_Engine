@@ -13,7 +13,9 @@ def create_database(db_path):
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
 
-            id TEXT,
+            source TEXT NOT NULL,
+
+            source_job_id TEXT,
 
             title TEXT,
 
@@ -27,19 +29,19 @@ def create_database(db_path):
 
             posted_date TEXT,
 
-            source TEXT,
-
             fingerprint TEXT UNIQUE,
 
-            relevance REAL,
+            relevance INTEGER,
 
-            hiring_confidence REAL,
+            hiring_confidence INTEGER,
 
-            red_flags REAL,
+            red_flags INTEGER,
 
             first_seen TEXT,
 
-            last_seen TEXT
+            last_seen TEXT,
+
+            times_seen INTEGER DEFAULT 1
 
         )
     """)
@@ -49,7 +51,10 @@ def create_database(db_path):
     return connection
 
 
-def save_jobs(connection, jobs):
+def save_jobs(
+    connection,
+    jobs
+):
 
     cursor = connection.cursor()
 
@@ -57,62 +62,107 @@ def save_jobs(connection, jobs):
 
     for job in jobs:
 
-        cursor.execute("""
-            INSERT INTO jobs (
-
-                id,
-                title,
-                company,
-                location,
-                description,
-                url,
-                posted_date,
-                source,
+        cursor.execute(
+            """
+            SELECT
                 fingerprint,
-                relevance,
-                hiring_confidence,
-                red_flags,
-                first_seen,
-                last_seen
+                times_seen
+            FROM jobs
+            WHERE fingerprint = ?
+            """,
+            (
+                job["fingerprint"],
+            )
+        )
 
+        existing = cursor.fetchone()
+
+        if existing:
+
+            times_seen = (
+                existing[1] + 1
             )
 
-            VALUES (
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?
+            cursor.execute(
+                """
+                UPDATE jobs
+
+                SET
+                    relevance = ?,
+                    hiring_confidence = ?,
+                    red_flags = ?,
+                    last_seen = ?,
+                    times_seen = ?,
+                    url = ?,
+                    description = ?
+
+                WHERE fingerprint = ?
+                """,
+                (
+                    job["relevance"],
+                    job[
+                        "hiring_confidence"
+                    ],
+                    job["red_flags"],
+                    now,
+                    times_seen,
+                    job["url"],
+                    job["description"],
+                    job["fingerprint"]
+                )
             )
 
-            ON CONFLICT(fingerprint)
-            DO UPDATE SET
+        else:
 
-                relevance =
-                    excluded.relevance,
+            cursor.execute(
+                """
+                INSERT INTO jobs (
 
-                hiring_confidence =
-                    excluded.hiring_confidence,
+                    source,
+                    source_job_id,
+                    title,
+                    company,
+                    location,
+                    description,
+                    url,
+                    posted_date,
+                    fingerprint,
+                    relevance,
+                    hiring_confidence,
+                    red_flags,
+                    first_seen,
+                    last_seen,
+                    times_seen
 
-                red_flags =
-                    excluded.red_flags,
+                )
 
-                last_seen =
-                    excluded.last_seen
-        """, (
-
-            job["id"],
-            job["title"],
-            job["company"],
-            job["location"],
-            job["description"],
-            job["url"],
-            job["posted_date"],
-            job["source"],
-            job["fingerprint"],
-            job["relevance"],
-            job["hiring_confidence"],
-            job["red_flags"],
-            now,
-            now
-        ))
+                VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?
+                )
+                """,
+                (
+                    job["source"],
+                    job[
+                        "source_job_id"
+                    ],
+                    job["title"],
+                    job["company"],
+                    job["location"],
+                    job["description"],
+                    job["url"],
+                    job["posted_date"],
+                    job["fingerprint"],
+                    job["relevance"],
+                    job[
+                        "hiring_confidence"
+                    ],
+                    job["red_flags"],
+                    now,
+                    now,
+                    1
+                )
+            )
 
     connection.commit()
