@@ -5,7 +5,10 @@ search:
     - Senior Data Engineer
     - Data Platform Engineer
     - Data Quality Engineer
+    - Data Integration Engineer
     - Azure Data Engineer
+    - Big Data Engineer
+    - Analytics Engineer
 
   locations:
     - Netherlands
@@ -30,6 +33,10 @@ search:
     - Synapse
     - ADLS
     - ETL
+    - Data Lake
+    - REST API
+    - Terraform
+    - Git
 
   exclude_words:
     - internship
@@ -43,7 +50,7 @@ sources:
 
   greenhouse:
 
-    # Greenhouse board tokens.
+    # Greenhouse board tokens
     # Example:
     # boards:
     #   - stripe
@@ -54,7 +61,7 @@ sources:
 
   lever:
 
-    # Lever company slugs.
+    # Lever company slugs
     # Example:
     # companies:
     #   - examplecompany
