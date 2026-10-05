@@ -1,7 +1,8 @@
-import os
 import html
-import yaml
+import os
+
 import pandas as pd
+import yaml
 
 from collect import collect_jobs
 from process import process_jobs
@@ -20,9 +21,7 @@ def load_config():
         encoding="utf-8"
     ) as file:
 
-        return yaml.safe_load(
-            file
-        )
+        return yaml.safe_load(file)
 
 
 def create_html(
@@ -96,9 +95,13 @@ def create_html(
             </td>
 
             <td>
-                <a href="{html.escape(
-                    job["url"]
-                )}">
+                <a
+                    href="{html.escape(
+                        job["url"],
+                        quote=True
+                    )}"
+                    target="_blank"
+                >
                     View Job
                 </a>
             </td>
@@ -107,85 +110,78 @@ def create_html(
         """
 
     report = f"""
-    <!DOCTYPE html>
+<!DOCTYPE html>
 
-    <html>
+<html>
 
-    <head>
+<head>
 
-        <title>
-            RoleRadar Engine
-        </title>
+<meta charset="UTF-8">
 
-        <style>
+<title>
+RoleRadar Engine
+</title>
 
-            body {{
-                font-family: Arial;
-                margin: 30px;
-            }}
+<style>
 
-            table {{
-                border-collapse:
-                    collapse;
-                width: 100%;
-            }}
+body {{
+    font-family: Arial, sans-serif;
+    margin: 30px;
+}}
 
-            th, td {{
-                border:
-                    1px solid #ddd;
-                padding: 8px;
-            }}
+table {{
+    border-collapse: collapse;
+    width: 100%;
+}}
 
-            th {{
-                background:
-                    #f2f2f2;
-            }}
+th, td {{
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}}
 
-        </style>
+th {{
+    background: #f2f2f2;
+}}
 
-    </head>
+</style>
 
-    <body>
+</head>
 
-        <h1>
-            RoleRadar Engine
-        </h1>
+<body>
 
-        <p>
-            Live jobs analyzed:
-            {len(jobs)}
-        </p>
+<h1>
+RoleRadar Engine
+</h1>
 
-        <table>
+<p>
+Live jobs analyzed:
+<strong>{len(jobs)}</strong>
+</p>
 
-            <tr>
+<table>
 
-                <th>Action</th>
-                <th>Role</th>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Relevance</th>
-                <th>Hiring Confidence</th>
-                <th>Red Flags</th>
-                <th>Skills</th>
-                <th>Warnings</th>
-                <th>Job</th>
+<tr>
+    <th>Action</th>
+    <th>Role</th>
+    <th>Company</th>
+    <th>Location</th>
+    <th>Relevance</th>
+    <th>Hiring Confidence</th>
+    <th>Red Flags</th>
+    <th>Skills</th>
+    <th>Warnings</th>
+    <th>Job</th>
+</tr>
 
-            </tr>
+{rows}
 
-            {rows}
+</table>
 
-        </table>
+</body>
 
-        <p>
-            Job data retrieved from
-            public job-board APIs.
-        </p>
-
-    </body>
-
-    </html>
-    """
+</html>
+"""
 
     with open(
         output_file,
@@ -198,18 +194,26 @@ def create_html(
 
 def main():
 
+    print()
     print(
-        "Starting RoleRadar Engine..."
+        "================================"
     )
+    print(
+        "       RoleRadar Engine"
+    )
+    print(
+        "================================"
+    )
+    print()
 
     config = load_config()
 
-    # -----------------------
+    # -------------------------
     # Collect
-    # -----------------------
+    # -------------------------
 
     print(
-        "Collecting live jobs..."
+        "[1/5] Collecting live jobs..."
     )
 
     jobs = collect_jobs(
@@ -217,28 +221,28 @@ def main():
     )
 
     print(
-        f"Jobs collected: {len(jobs)}"
+        f"      Collected: {len(jobs)}"
     )
 
     if not jobs:
 
+        print()
         print(
-            "No jobs collected."
+            "No jobs were collected."
         )
 
         print(
-            "Add Greenhouse or Lever "
-            "companies in config.yaml."
+            "Check your source configuration."
         )
 
         return
 
-    # -----------------------
+    # -------------------------
     # Process
-    # -----------------------
+    # -------------------------
 
     print(
-        "Processing jobs..."
+        "[2/5] Filtering and cleaning..."
     )
 
     jobs = process_jobs(
@@ -247,25 +251,70 @@ def main():
     )
 
     print(
-        f"Jobs after filtering: "
-        f"{len(jobs)}"
+        f"      Matching jobs: {len(jobs)}"
     )
 
-    # -----------------------
+    if not jobs:
+
+        print()
+        print(
+            "Jobs were collected, but "
+            "none matched your filters."
+        )
+
+        print(
+            "Try increasing max_days_old "
+            "or checking your role/location "
+            "filters."
+        )
+
+        return
+
+    # -------------------------
     # Score
-    # -----------------------
+    # -------------------------
 
     print(
-        "Scoring jobs..."
+        "[3/5] Scoring jobs..."
     )
 
     jobs = score_jobs(
         jobs
     )
 
-    # -----------------------
+    apply_count = sum(
+        1
+        for job in jobs
+        if job["action"] == "APPLY"
+    )
+
+    verify_count = sum(
+        1
+        for job in jobs
+        if job["action"] == "VERIFY"
+    )
+
+    skip_count = sum(
+        1
+        for job in jobs
+        if job["action"] == "SKIP"
+    )
+
+    print(
+        f"      APPLY: {apply_count}"
+    )
+
+    print(
+        f"      VERIFY: {verify_count}"
+    )
+
+    print(
+        f"      SKIP: {skip_count}"
+    )
+
+    # -------------------------
     # Directories
-    # -----------------------
+    # -------------------------
 
     os.makedirs(
         "data",
@@ -277,12 +326,12 @@ def main():
         exist_ok=True
     )
 
-    # -----------------------
+    # -------------------------
     # Database
-    # -----------------------
+    # -------------------------
 
     print(
-        "Saving jobs..."
+        "[4/5] Updating SQLite..."
     )
 
     connection = create_database(
@@ -296,9 +345,13 @@ def main():
 
     connection.close()
 
-    # -----------------------
-    # CSV
-    # -----------------------
+    # -------------------------
+    # Reports
+    # -------------------------
+
+    print(
+        "[5/5] Creating reports..."
+    )
 
     dataframe = pd.DataFrame(
         jobs
@@ -309,35 +362,39 @@ def main():
         index=False
     )
 
-    # -----------------------
-    # HTML
-    # -----------------------
-
     create_html(
         jobs,
         config["reports"]["html"]
     )
 
     print()
-
     print(
-        "RoleRadar Engine completed."
+        "================================"
+    )
+    print(
+        "        Run completed"
+    )
+    print(
+        "================================"
+    )
+
+    print()
+    print(
+        f"CSV:      "
+        f"{config['reports']['csv']}"
     )
 
     print(
-        "CSV:",
-        config["reports"]["csv"]
+        f"HTML:     "
+        f"{config['reports']['html']}"
     )
 
     print(
-        "HTML:",
-        config["reports"]["html"]
+        f"Database: "
+        f"{config['database']['path']}"
     )
 
-    print(
-        "Database:",
-        config["database"]["path"]
-    )
+    print()
 
 
 if __name__ == "__main__":
