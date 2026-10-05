@@ -2,43 +2,74 @@ def calculate_relevance(job):
 
     score = 0
 
-    # Role
+    # -------------------------
+    # Role match
+    # -------------------------
+
     score += 30
 
+    # -------------------------
     # Required skills
-    if len(
+    # -------------------------
+
+    required_count = len(
         job["required_skills"]
-    ) >= 2:
+    )
+
+    if required_count >= 2:
 
         score += 30
 
+    elif required_count == 1:
+
+        score += 15
+
+    # -------------------------
     # Preferred skills
+    # -------------------------
+
+    preferred_count = len(
+        job["preferred_skills"]
+    )
+
     score += min(
-        len(
-            job["preferred_skills"]
-        ) * 4,
+        preferred_count * 4,
         20
     )
 
+    # -------------------------
     # Location
+    # -------------------------
+
     if job["location"]:
 
         score += 10
 
+    # -------------------------
     # Freshness
-    if job["age_days"] is not None:
+    # -------------------------
 
-        if job["age_days"] <= 2:
+    age = job["age_days"]
 
-            score += 10
+    if age is None:
 
-        elif job["age_days"] <= 5:
+        score += 2
 
-            score += 7
+    elif age <= 2:
 
-        else:
+        score += 10
 
-            score += 4
+    elif age <= 5:
+
+        score += 8
+
+    elif age <= 10:
+
+        score += 6
+
+    else:
+
+        score += 3
 
     return min(
         score,
@@ -50,35 +81,44 @@ def calculate_hiring_confidence(job):
 
     score = 0
 
+    # Company identified
     if job["company"]:
+        score += 20
 
-        score += 25
-
+    # Direct application URL
     if job["url"]:
+        score += 20
 
-        score += 25
+    # Recent posting
+    age = job["age_days"]
 
-    if job["age_days"] is not None:
+    if age is not None:
 
-        if job["age_days"] <= 3:
+        if age <= 3:
+            score += 30
 
-            score += 25
+        elif age <= 7:
+            score += 20
 
-        elif job["age_days"] <= 7:
+        elif age <= 14:
+            score += 10
 
-            score += 15
-
-    if len(
+    # Description quality
+    description_length = len(
         job["description"]
-    ) >= 300:
+    )
 
-        score += 25
+    if description_length >= 500:
 
-    elif len(
-        job["description"]
-    ) >= 150:
+        score += 30
 
-        score += 15
+    elif description_length >= 250:
+
+        score += 20
+
+    elif description_length >= 100:
+
+        score += 10
 
     return min(
         score,
@@ -105,7 +145,7 @@ def calculate_red_flags(job):
         score += 30
 
         warnings.append(
-            "Missing job URL"
+            "Missing URL"
         )
 
     if len(
@@ -118,9 +158,11 @@ def calculate_red_flags(job):
             "Short description"
         )
 
+    age = job["age_days"]
+
     if (
-        job["age_days"] is not None
-        and job["age_days"] > 5
+        age is not None
+        and age > 14
     ):
 
         score += 20
@@ -158,8 +200,10 @@ def score_jobs(jobs):
 
         job[
             "hiring_confidence"
-        ] = calculate_hiring_confidence(
-            job
+        ] = (
+            calculate_hiring_confidence(
+                job
+            )
         )
 
         (
@@ -169,31 +213,47 @@ def score_jobs(jobs):
             job
         )
 
-        job["red_flags"] = (
-            red_score
-        )
+        job[
+            "red_flags"
+        ] = red_score
 
-        job["warnings"] = (
-            warnings
-        )
+        job[
+            "warnings"
+        ] = warnings
+
+        # -------------------------
+        # Recommendation
+        # -------------------------
 
         if (
             job["relevance"] >= 75
             and
-            job["hiring_confidence"] >= 70
+            job[
+                "hiring_confidence"
+            ] >= 70
             and
             job["red_flags"] <= 20
         ):
 
-            job["action"] = "APPLY"
+            job[
+                "action"
+            ] = "APPLY"
 
-        elif job["red_flags"] <= 40:
+        elif (
+            job["relevance"] >= 60
+            and
+            job["red_flags"] <= 40
+        ):
 
-            job["action"] = "VERIFY"
+            job[
+                "action"
+            ] = "VERIFY"
 
         else:
 
-            job["action"] = "SKIP"
+            job[
+                "action"
+            ] = "SKIP"
 
     return sorted(
         jobs,
