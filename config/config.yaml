@@ -1,4 +1,5 @@
 search:
+
   roles:
     - Data Engineer
     - Senior Data Engineer
@@ -35,16 +36,39 @@ search:
     - intern
     - unpaid
 
-  max_days_old: 7
+  max_days_old: 14
 
-adzuna:
-  country: nl
-  results_per_page: 50
-  pages: 1
+
+sources:
+
+  greenhouse:
+
+    # Greenhouse board tokens.
+    # Example:
+    # boards:
+    #   - stripe
+    #   - airbnb
+
+    boards: []
+
+
+  lever:
+
+    # Lever company slugs.
+    # Example:
+    # companies:
+    #   - examplecompany
+
+    companies: []
+
 
 database:
+
   path: data/roleradar.db
 
+
 reports:
+
   csv: reports/daily_jobs.csv
+
   html: reports/daily_jobs.html
