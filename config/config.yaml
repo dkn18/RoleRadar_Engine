@@ -1,0 +1,50 @@
+search:
+  roles:
+    - Data Engineer
+    - Senior Data Engineer
+    - Data Platform Engineer
+    - Data Quality Engineer
+    - Azure Data Engineer
+
+  locations:
+    - Netherlands
+    - Amsterdam
+    - Utrecht
+    - Rotterdam
+    - Eindhoven
+    - The Hague
+    - Remote
+
+  required_skills:
+    - Python
+    - SQL
+
+  preferred_skills:
+    - Azure
+    - Azure Data Factory
+    - ADF
+    - Databricks
+    - Spark
+    - PySpark
+    - Synapse
+    - ADLS
+    - ETL
+
+  exclude_words:
+    - internship
+    - intern
+    - unpaid
+
+  max_days_old: 7
+
+adzuna:
+  country: nl
+  results_per_page: 50
+  pages: 1
+
+database:
+  path: data/roleradar.db
+
+reports:
+  csv: reports/daily_jobs.csv
+  html: reports/daily_jobs.html
