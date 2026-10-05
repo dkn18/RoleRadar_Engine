@@ -4,11 +4,12 @@ from process import (
 )
 
 from score import (
-    calculate_relevance
+    calculate_relevance,
+    calculate_hiring_confidence
 )
 
 
-def test_fingerprint():
+def test_fingerprint_same_job():
 
     job1 = {
         "company": "Example",
@@ -31,7 +32,7 @@ def test_fingerprint():
 
 def test_duplicate_removal():
 
-    job = {
+    job1 = {
 
         "company": "Example",
 
@@ -39,18 +40,24 @@ def test_duplicate_removal():
 
         "location": "Amsterdam",
 
-        "fingerprint": "123"
-
+        "fingerprint": "abc123"
     }
+
+    job2 = job1.copy()
 
     result = remove_duplicates(
         [
-            job,
-            job.copy()
+            job1,
+            job2
         ]
     )
 
     assert len(result) == 1
+
+    assert (
+        result[0]["duplicate_count"]
+        == 1
+    )
 
 
 def test_relevance():
@@ -70,7 +77,6 @@ def test_relevance():
         "location": "Amsterdam",
 
         "age_days": 1
-
     }
 
     score = calculate_relevance(
@@ -79,4 +85,25 @@ def test_relevance():
 
     assert 0 <= score <= 100
 
-    assert score >= 70
+    assert score >= 80
+
+
+def test_hiring_confidence():
+
+    job = {
+
+        "company": "Example",
+
+        "url": "https://example.com/job",
+
+        "age_days": 1,
+
+        "description": "x" * 500
+
+    }
+
+    score = calculate_hiring_confidence(
+        job
+    )
+
+    assert score == 100
