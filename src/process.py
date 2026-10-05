@@ -1,6 +1,6 @@
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def clean_text(text):
@@ -15,85 +15,118 @@ def clean_text(text):
     ).strip()
 
 
-def contains_word(text, word):
+def contains_word(text, phrase):
 
-    if not text or not word:
+    if not text or not phrase:
         return False
 
     pattern = (
         r"(?<!\w)"
-        + re.escape(word.lower())
+        + re.escape(
+            phrase.lower()
+        )
         + r"(?!\w)"
     )
 
-    return re.search(
-        pattern,
-        text.lower()
-    ) is not None
+    return (
+        re.search(
+            pattern,
+            text.lower()
+        )
+        is not None
+    )
 
 
-def days_old(date_string):
+def parse_date(date_string):
 
     if not date_string:
         return None
 
     try:
 
-        posted = datetime.fromisoformat(
+        return datetime.fromisoformat(
             date_string.replace(
                 "Z",
                 "+00:00"
             )
         )
 
-        today = datetime.now(
-            posted.tzinfo
-        )
-
-        return max(
-            0,
-            (today - posted).days
-        )
-
     except ValueError:
 
         try:
 
-            posted = datetime.strptime(
+            return datetime.strptime(
                 date_string[:10],
                 "%Y-%m-%d"
+            ).replace(
+                tzinfo=timezone.utc
             )
-
-            return (
-                datetime.today()
-                - posted
-            ).days
 
         except ValueError:
 
             return None
 
 
+def days_old(date_string):
+
+    posted = parse_date(
+        date_string
+    )
+
+    if posted is None:
+        return None
+
+    now = datetime.now(
+        timezone.utc
+    )
+
+    if posted.tzinfo is None:
+
+        posted = posted.replace(
+            tzinfo=timezone.utc
+        )
+
+    difference = (
+        now - posted
+    ).days
+
+    return max(
+        0,
+        difference
+    )
+
+
 def create_fingerprint(job):
 
-    text = "|".join([
-        job["company"].lower(),
-        job["title"].lower(),
-        job["location"].lower()
+    company = clean_text(
+        job["company"]
+    ).lower()
+
+    title = clean_text(
+        job["title"]
+    ).lower()
+
+    location = clean_text(
+        job["location"]
+    ).lower()
+
+    raw = "|".join([
+        company,
+        title,
+        location
     ])
 
     return hashlib.sha256(
-        text.encode("utf-8")
+        raw.encode("utf-8")
     ).hexdigest()
 
 
 def process_jobs(jobs, config):
 
-    processed = []
-
     search = config["search"]
 
     roles = search["roles"]
+
     locations = search["locations"]
 
     required_skills = (
@@ -112,6 +145,8 @@ def process_jobs(jobs, config):
         search["max_days_old"]
     )
 
+    processed = []
+
     for job in jobs:
 
         for field in [
@@ -119,20 +154,33 @@ def process_jobs(jobs, config):
             "company",
             "location",
             "description",
-            "url"
+            "url",
+            "posted_date"
         ]:
 
             job[field] = clean_text(
-                job[field]
+                job.get(field, "")
             )
 
-        # --------------------
-        # Role
-        # --------------------
+        title = job["title"]
+
+        description = job[
+            "description"
+        ]
+
+        full_text = (
+            title
+            + " "
+            + description
+        )
+
+        # -------------------------
+        # Role matching
+        # -------------------------
 
         role_match = any(
             contains_word(
-                job["title"],
+                title,
                 role
             )
             for role in roles
@@ -141,44 +189,37 @@ def process_jobs(jobs, config):
         if not role_match:
             continue
 
-        # --------------------
-        # Location
-        # --------------------
+        # -------------------------
+        # Location matching
+        # -------------------------
 
         location_match = any(
             location.lower()
             in job["location"].lower()
-
             for location in locations
         )
 
         if not location_match:
             continue
 
-        # --------------------
-        # Exclusions
-        # --------------------
+        # -------------------------
+        # Exclusion
+        # -------------------------
 
-        full_text = (
-            job["title"]
-            + " "
-            + job["description"]
-        )
-
-        excluded = any(
+        title_excluded = any(
             contains_word(
-                full_text,
+                title,
                 word
             )
             for word in exclude_words
         )
 
-        if excluded:
+        if title_excluded:
             continue
 
-        # --------------------
-        # Required skills
-        # --------------------
+        # -------------------------
+        # Skills
+        # -------------------------
 
         matched_required = [
             skill
@@ -191,13 +232,6 @@ def process_jobs(jobs, config):
             )
         ]
 
-        if len(matched_required) < 2:
-            continue
-
-        # --------------------
-        # Preferred skills
-        # --------------------
-
         matched_preferred = [
             skill
 
@@ -209,9 +243,15 @@ def process_jobs(jobs, config):
             )
         ]
 
-        # --------------------
+        # At least ONE core skill.
+        # Scoring decides how strong the match is.
+
+        if not matched_required:
+            continue
+
+        # -------------------------
         # Freshness
-        # --------------------
+        # -------------------------
 
         age = days_old(
             job["posted_date"]
@@ -223,18 +263,22 @@ def process_jobs(jobs, config):
         ):
             continue
 
-        job["required_skills"] = (
-            matched_required
-        )
+        job[
+            "required_skills"
+        ] = matched_required
 
-        job["preferred_skills"] = (
-            matched_preferred
-        )
+        job[
+            "preferred_skills"
+        ] = matched_preferred
 
-        job["age_days"] = age
+        job[
+            "age_days"
+        ] = age
 
-        job["fingerprint"] = (
-            create_fingerprint(job)
+        job[
+            "fingerprint"
+        ] = create_fingerprint(
+            job
         )
 
         processed.append(job)
@@ -256,15 +300,21 @@ def remove_duplicates(jobs):
 
         if fingerprint not in unique:
 
-            job["duplicate_count"] = 0
+            job[
+                "duplicate_count"
+            ] = 0
 
-            unique[fingerprint] = job
+            unique[
+                fingerprint
+            ] = job
 
         else:
 
             unique[
                 fingerprint
-            ]["duplicate_count"] += 1
+            ][
+                "duplicate_count"
+            ] += 1
 
     return list(
         unique.values()
