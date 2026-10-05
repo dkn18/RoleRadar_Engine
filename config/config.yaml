@@ -18,6 +18,7 @@ search:
     - Eindhoven
     - The Hague
     - Remote
+    - Europe
 
   required_skills:
     - Python
@@ -43,30 +44,26 @@ search:
     - intern
     - unpaid
 
-  max_days_old: 14
+  max_days_old: 30
 
 
 sources:
 
   greenhouse:
 
-    # Greenhouse board tokens
-    # Example:
-    # boards:
-    #   - stripe
-    #   - airbnb
-
-    boards: []
+    boards:
+      - dept
+      - workatbackbase
+      - bolcomen
+      - sytac
+      - doitintl
 
 
   lever:
 
-    # Lever company slugs
-    # Example:
-    # companies:
-    #   - examplecompany
-
-    companies: []
+    companies:
+      - zencore
+      - pattern
 
 
 database:
