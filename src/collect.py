@@ -1,69 +1,76 @@
-import requests
+import re
 from datetime import datetime, timezone
+
+import requests
 
 
 def clean_html(text):
-    """Remove basic HTML tags from job descriptions."""
+    """Convert basic HTML content into readable plain text."""
 
     if not text:
         return ""
 
-    import re
-
-    text = re.sub(
-        r"<[^>]+>",
-        " ",
-        text
-    )
-
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
-    )
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
 
     return text.strip()
 
 
 def greenhouse_jobs(boards):
-    """Get live jobs from Greenhouse public job boards."""
+    """Collect live jobs from public Greenhouse job boards."""
 
     jobs = []
+
+    session = requests.Session()
 
     for board in boards:
 
         url = (
-            "https://boards-api.greenhouse.io/"
+            f"https://boards-api.greenhouse.io/"
             f"v1/boards/{board}/jobs"
         )
 
-        params = {
-            "content": "true"
-        }
+        try:
 
-        response = requests.get(
-            url,
-            params=params,
-            timeout=30
-        )
+            response = session.get(
+                url,
+                params={"content": "true"},
+                timeout=30
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        data = response.json()
+            data = response.json()
 
-        for job in data.get("jobs", []):
+        except requests.RequestException as error:
 
-            location = (
-                job.get("location") or {}
-            ).get("name", "")
+            print(
+                f"[Greenhouse] Failed for {board}: "
+                f"{error}"
+            )
+
+            continue
+
+        for item in data.get("jobs", []):
+
+            location_data = (
+                item.get("location") or {}
+            )
+
+            location = location_data.get(
+                "name",
+                ""
+            )
 
             jobs.append({
 
-                "id": str(
-                    job.get("id", "")
+                "source": "Greenhouse",
+
+                "source_job_id": str(
+                    item.get("id", "")
                 ),
 
-                "title": job.get(
+                "title": item.get(
                     "title",
                     ""
                 ),
@@ -73,33 +80,32 @@ def greenhouse_jobs(boards):
                 "location": location,
 
                 "description": clean_html(
-                    job.get(
+                    item.get(
                         "content",
                         ""
                     )
                 ),
 
-                "url": job.get(
+                "url": item.get(
                     "absolute_url",
                     ""
                 ),
 
-                "posted_date": job.get(
+                "posted_date": item.get(
                     "updated_at",
                     ""
-                ),
-
-                "source": "Greenhouse"
-
+                )
             })
 
     return jobs
 
 
 def lever_jobs(companies):
-    """Get live jobs from Lever public postings."""
+    """Collect live jobs from public Lever postings."""
 
     jobs = []
+
+    session = requests.Session()
 
     for company in companies:
 
@@ -108,57 +114,77 @@ def lever_jobs(companies):
             f"{company}"
         )
 
-        params = {
-            "mode": "json"
-        }
+        try:
 
-        response = requests.get(
-            url,
-            params=params,
-            timeout=30
-        )
+            response = session.get(
+                url,
+                params={"mode": "json"},
+                timeout=30
+            )
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        data = response.json()
+            data = response.json()
 
-        for job in data:
+        except requests.RequestException as error:
+
+            print(
+                f"[Lever] Failed for {company}: "
+                f"{error}"
+            )
+
+            continue
+
+        for item in data:
 
             categories = (
-                job.get("categories") or {}
+                item.get("categories") or {}
             )
 
             description = (
-                job.get("descriptionPlain")
+                item.get("descriptionPlain")
                 or clean_html(
-                    job.get(
+                    item.get(
                         "description",
                         ""
                     )
                 )
             )
 
-            # Lever timestamps are milliseconds.
-            created = job.get("createdAt")
+            created_at = item.get(
+                "createdAt"
+            )
 
             posted_date = ""
 
-            if created:
+            if created_at:
 
-                posted_date = (
-                    datetime.fromtimestamp(
-                        created / 1000,
-                        tz=timezone.utc
-                    ).isoformat()
-                )
+                try:
+
+                    posted_date = (
+                        datetime.fromtimestamp(
+                            created_at / 1000,
+                            tz=timezone.utc
+                        ).isoformat()
+                    )
+
+                except (
+                    TypeError,
+                    ValueError,
+                    OSError
+                ):
+
+                    posted_date = ""
 
             jobs.append({
 
-                "id": str(
-                    job.get("id", "")
+                "source": "Lever",
+
+                "source_job_id": str(
+                    item.get("id", "")
                 ),
 
-                "title": job.get(
+                "title": item.get(
                     "text",
                     ""
                 ),
@@ -173,17 +199,14 @@ def lever_jobs(companies):
                 "description": description,
 
                 "url": (
-                    job.get("hostedUrl")
-                    or job.get(
+                    item.get("hostedUrl")
+                    or item.get(
                         "applyUrl",
                         ""
                     )
                 ),
 
-                "posted_date": posted_date,
-
-                "source": "Lever"
-
+                "posted_date": posted_date
             })
 
     return jobs
@@ -193,31 +216,39 @@ def collect_jobs(config):
 
     jobs = []
 
-    greenhouse = (
+    greenhouse_boards = (
         config["sources"]
         ["greenhouse"]
         .get("boards", [])
     )
 
-    lever = (
+    lever_companies = (
         config["sources"]
         ["lever"]
         .get("companies", [])
     )
 
-    if greenhouse:
+    if greenhouse_boards:
+
+        print(
+            "Collecting from Greenhouse..."
+        )
 
         jobs.extend(
             greenhouse_jobs(
-                greenhouse
+                greenhouse_boards
             )
         )
 
-    if lever:
+    if lever_companies:
+
+        print(
+            "Collecting from Lever..."
+        )
 
         jobs.extend(
             lever_jobs(
-                lever
+                lever_companies
             )
         )
 
