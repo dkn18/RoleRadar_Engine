@@ -24,8 +24,7 @@ RoleRadar_Engine/
 │
 ├── .gitignore
 ├── requirements.txt
-├── pyproject.toml
-└── README.md
+└── pyproject.toml
 
 # RoleRadar Engine
 
