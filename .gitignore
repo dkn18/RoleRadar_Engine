@@ -10,7 +10,5 @@ data/*.db
 data/*.sqlite
 data/*.sqlite3
 
-reports/*.csv
-reports/*.html
 
 .DS_Store
