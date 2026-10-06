@@ -4,10 +4,10 @@ import os
 import pandas as pd
 import yaml
 
-from collect import collect_jobs
-from process import process_jobs
-from score import score_jobs
-from database import (
+from src.collect import collect_jobs
+from src.process import process_jobs
+from src.score import score_jobs
+from src.database import (
     create_database,
     save_jobs
 )
@@ -34,13 +34,39 @@ def create_html(
     for job in jobs:
 
         skills = ", ".join(
-            job["required_skills"]
+            job.get("required_skills", [])
             +
-            job["preferred_skills"]
+            job.get("preferred_skills", [])
         )
 
         warnings = ", ".join(
-            job["warnings"]
+            job.get("warnings", [])
+        )
+
+        apply_url = (
+            job.get("apply_url")
+            or job.get("url")
+            or ""
+        )
+
+        compensation = (
+            job.get("compensation")
+            or "Not specified"
+        )
+
+        workplace_type = (
+            job.get("workplace_type")
+            or "Not specified"
+        )
+
+        employment_type = (
+            job.get("employment_type")
+            or "Not specified"
+        )
+
+        department = (
+            job.get("department")
+            or ""
         )
 
         rows += f"""
@@ -48,38 +74,68 @@ def create_html(
 
             <td>
                 {html.escape(
-                    job["action"]
+                    job.get("action", "")
                 )}
             </td>
 
             <td>
                 {html.escape(
-                    job["title"]
+                    job.get("title", "")
                 )}
             </td>
 
             <td>
                 {html.escape(
-                    job["company"]
+                    job.get("company", "")
                 )}
             </td>
 
             <td>
                 {html.escape(
-                    job["location"]
+                    job.get("location", "")
                 )}
             </td>
 
             <td>
-                {job["relevance"]}
+                {html.escape(
+                    workplace_type
+                )}
             </td>
 
             <td>
-                {job["hiring_confidence"]}
+                {html.escape(
+                    employment_type
+                )}
             </td>
 
             <td>
-                {job["red_flags"]}
+                {html.escape(
+                    department
+                )}
+            </td>
+
+            <td>
+                {html.escape(
+                    compensation
+                )}
+            </td>
+
+            <td>
+                {job.get("relevance", 0)}
+            </td>
+
+            <td>
+                {job.get(
+                    "hiring_confidence",
+                    0
+                )}
+            </td>
+
+            <td>
+                {job.get(
+                    "red_flags",
+                    0
+                )}
             </td>
 
             <td>
@@ -97,12 +153,13 @@ def create_html(
             <td>
                 <a
                     href="{html.escape(
-                        job["url"],
+                        apply_url,
                         quote=True
                     )}"
                     target="_blank"
+                    rel="noopener noreferrer"
                 >
-                    View Job
+                    Apply
                 </a>
             </td>
 
@@ -117,6 +174,10 @@ def create_html(
 <head>
 
 <meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1.0">
 
 <title>
 RoleRadar Engine
@@ -138,10 +199,21 @@ th, td {{
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
+    vertical-align: top;
 }}
 
 th {{
     background: #f2f2f2;
+    position: sticky;
+    top: 0;
+}}
+
+tr:hover {{
+    background: #f8f8f8;
+}}
+
+a {{
+    text-decoration: none;
 }}
 
 </style>
@@ -166,12 +238,16 @@ Live jobs analyzed:
     <th>Role</th>
     <th>Company</th>
     <th>Location</th>
+    <th>Workplace</th>
+    <th>Employment</th>
+    <th>Department</th>
+    <th>Compensation</th>
     <th>Relevance</th>
     <th>Hiring Confidence</th>
     <th>Red Flags</th>
     <th>Skills</th>
     <th>Warnings</th>
-    <th>Job</th>
+    <th>Apply</th>
 </tr>
 
 {rows}

@@ -1,23 +1,13 @@
 search:
-
-roles:
-  - Data Engineer
-  - Senior Data Engineer
-  - Lead Data Engineer
-  - Data Platform Engineer
-  - Senior Data Platform Engineer
-  - Data Quality Engineer
-  - Data Integration Engineer
-  - Data Pipeline Engineer
-  - Data Infrastructure Engineer
-  - Azure Data Engineer
-  - Cloud Data Engineer
-  - Big Data Engineer
-  - Analytics Engineer
-  - ETL Developer
-  - ETL Engineer
-  - Data Warehouse Engineer
-  - Data Architect
+  roles:
+    - Data Engineer
+    - Senior Data Engineer
+    - Data Platform Engineer
+    - Data Quality Engineer
+    - Data Integration Engineer
+    - Azure Data Engineer
+    - Big Data Engineer
+    - Analytics Engineer
 
   locations:
     - Netherlands
@@ -55,11 +45,8 @@ roles:
 
   max_days_old: 30
 
-
 sources:
-
   greenhouse:
-
     boards:
       - dept
       - workatbackbase
@@ -67,36 +54,18 @@ sources:
       - sytac
       - doitintl
 
-
   lever:
-
     companies:
       - zencore
       - pattern
 
-
   ashby:
-
     job_boards:
       - datasnipper
-      - bitvavo
-      - myTomorrows
-      - stream
-      - cuspai
-      - i3d
-      - keyrock
-      - airapps
-      - angi
-      - airweave
-
 
 database:
-
   path: data/roleradar.db
 
-
 reports:
-
   csv: reports/daily_jobs.csv
-
   html: reports/daily_jobs.html
