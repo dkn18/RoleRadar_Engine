@@ -1,14 +1,23 @@
 search:
 
-  roles:
-    - Data Engineer
-    - Senior Data Engineer
-    - Data Platform Engineer
-    - Data Quality Engineer
-    - Data Integration Engineer
-    - Azure Data Engineer
-    - Big Data Engineer
-    - Analytics Engineer
+roles:
+  - Data Engineer
+  - Senior Data Engineer
+  - Lead Data Engineer
+  - Data Platform Engineer
+  - Senior Data Platform Engineer
+  - Data Quality Engineer
+  - Data Integration Engineer
+  - Data Pipeline Engineer
+  - Data Infrastructure Engineer
+  - Azure Data Engineer
+  - Cloud Data Engineer
+  - Big Data Engineer
+  - Analytics Engineer
+  - ETL Developer
+  - ETL Engineer
+  - Data Warehouse Engineer
+  - Data Architect
 
   locations:
     - Netherlands
