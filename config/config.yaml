@@ -66,6 +66,21 @@ sources:
       - pattern
 
 
+  ashby:
+
+    job_boards:
+      - datasnipper
+      - bitvavo
+      - myTomorrows
+      - stream
+      - cuspai
+      - i3d
+      - keyrock
+      - airapps
+      - angi
+      - airweave
+
+
 database:
 
   path: data/roleradar.db
