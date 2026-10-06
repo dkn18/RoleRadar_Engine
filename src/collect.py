@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 import requests
 
+from src.collect_ashby import ashby_jobs
+
 
 def clean_html(text):
     """Convert basic HTML content into readable plain text."""
@@ -213,20 +215,31 @@ def lever_jobs(companies):
 
 
 def collect_jobs(config):
+    """Collect jobs from all configured job sources."""
 
     jobs = []
 
     greenhouse_boards = (
-        config["sources"]
-        ["greenhouse"]
+        config.get("sources", {})
+        .get("greenhouse", {})
         .get("boards", [])
     )
 
     lever_companies = (
-        config["sources"]
-        ["lever"]
+        config.get("sources", {})
+        .get("lever", {})
         .get("companies", [])
     )
+
+    ashby_job_boards = (
+        config.get("sources", {})
+        .get("ashby", {})
+        .get("job_boards", [])
+    )
+
+    # -----------------------------
+    # Greenhouse
+    # -----------------------------
 
     if greenhouse_boards:
 
@@ -240,6 +253,10 @@ def collect_jobs(config):
             )
         )
 
+    # -----------------------------
+    # Lever
+    # -----------------------------
+
     if lever_companies:
 
         print(
@@ -251,5 +268,25 @@ def collect_jobs(config):
                 lever_companies
             )
         )
+
+    # -----------------------------
+    # Ashby
+    # -----------------------------
+
+    if ashby_job_boards:
+
+        print(
+            "Collecting from Ashby..."
+        )
+
+        jobs.extend(
+            ashby_jobs(
+                ashby_job_boards
+            )
+        )
+
+    print(
+        f"Total collected jobs: {len(jobs)}"
+    )
 
     return jobs
