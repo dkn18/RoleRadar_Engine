@@ -32,8 +32,7 @@ def contains_word(text, phrase):
         re.search(
             pattern,
             text.lower()
-        )
-        is not None
+        ) is not None
     )
 
 
@@ -149,13 +148,26 @@ def process_jobs(jobs, config):
 
     for job in jobs:
 
+        # Clean common fields
+        # while preserving all other
+        # collector-specific fields.
+
         for field in [
             "title",
             "company",
             "location",
             "description",
             "url",
-            "posted_date"
+            "posted_date",
+            "city",
+            "region",
+            "country",
+            "department",
+            "team",
+            "workplace_type",
+            "employment_type",
+            "compensation",
+            "apply_url"
         ]:
 
             job[field] = clean_text(
@@ -223,9 +235,7 @@ def process_jobs(jobs, config):
 
         matched_required = [
             skill
-
             for skill in required_skills
-
             if contains_word(
                 full_text,
                 skill
@@ -234,9 +244,7 @@ def process_jobs(jobs, config):
 
         matched_preferred = [
             skill
-
             for skill in preferred_skills
-
             if contains_word(
                 full_text,
                 skill
@@ -244,7 +252,8 @@ def process_jobs(jobs, config):
         ]
 
         # At least ONE core skill.
-        # Scoring decides how strong the match is.
+        # Scoring decides how strong
+        # the match is.
 
         if not matched_required:
             continue
