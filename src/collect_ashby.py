@@ -32,6 +32,9 @@ def ashby_jobs(job_boards):
 
             response = session.get(
                 url,
+                params={
+                    "includeCompensation": "true"
+                },
                 timeout=30
             )
 
@@ -69,6 +72,8 @@ def ashby_jobs(job_boards):
 
         for item in company_jobs:
 
+            # Ignore jobs that are not meant
+            # to appear on the public board.
             if not item.get("isListed", True):
                 continue
 
@@ -81,6 +86,10 @@ def ashby_jobs(job_boards):
                 "location",
                 ""
             )
+
+            # --------------------------------
+            # Secondary locations
+            # --------------------------------
 
             secondary_locations = []
 
@@ -115,6 +124,70 @@ def ashby_jobs(job_boards):
                 )
             )
 
+            # --------------------------------
+            # Address
+            # --------------------------------
+
+            address = (
+                item.get("address")
+                or {}
+            )
+
+            postal_address = (
+                address.get(
+                    "postalAddress"
+                )
+                or {}
+            )
+
+            city = postal_address.get(
+                "addressLocality",
+                ""
+            )
+
+            region = postal_address.get(
+                "addressRegion",
+                ""
+            )
+
+            country = postal_address.get(
+                "addressCountry",
+                ""
+            )
+
+            # --------------------------------
+            # Job metadata
+            # --------------------------------
+
+            department = item.get(
+                "department",
+                ""
+            )
+
+            team = item.get(
+                "team",
+                ""
+            )
+
+            is_remote = item.get(
+                "isRemote",
+                False
+            )
+
+            workplace_type = item.get(
+                "workplaceType",
+                ""
+            )
+
+            employment_type = item.get(
+                "employmentType",
+                ""
+            )
+
+            # --------------------------------
+            # Description
+            # --------------------------------
+
             description = (
                 item.get(
                     "descriptionPlain",
@@ -122,6 +195,10 @@ def ashby_jobs(job_boards):
                 )
                 or ""
             )
+
+            # --------------------------------
+            # Published date
+            # --------------------------------
 
             published_at = item.get(
                 "publishedAt",
@@ -160,22 +237,57 @@ def ashby_jobs(job_boards):
                         published_at
                     )
 
+            # --------------------------------
+            # Compensation
+            # --------------------------------
+
+            compensation = (
+                item.get(
+                    "compensation"
+                )
+                or {}
+            )
+
+            compensation_summary = (
+                compensation.get(
+                    "scrapeableCompensationSalarySummary",
+                    ""
+                )
+                or compensation.get(
+                    "compensationTierSummary",
+                    ""
+                )
+            )
+
+            # --------------------------------
+            # URLs
+            # --------------------------------
+
             job_url = (
                 item.get(
                     "jobUrl"
                 )
-                or item.get(
-                    "applyUrl",
-                    ""
-                )
+                or ""
             )
+
+            apply_url = (
+                item.get(
+                    "applyUrl"
+                )
+                or job_url
+            )
+
+            # --------------------------------
+            # Store normalized job
+            # --------------------------------
 
             jobs.append({
 
                 "source": "Ashby",
 
                 "source_job_id": (
-                    job_url
+                    item.get("id")
+                    or job_url
                     or f"{board}:{title}"
                 ),
 
@@ -185,9 +297,31 @@ def ashby_jobs(job_boards):
 
                 "location": location_text,
 
+                "city": city,
+
+                "region": region,
+
+                "country": country,
+
+                "department": department,
+
+                "team": team,
+
+                "is_remote": is_remote,
+
+                "workplace_type": workplace_type,
+
+                "employment_type": employment_type,
+
                 "description": description,
 
+                "compensation": (
+                    compensation_summary
+                ),
+
                 "url": job_url,
+
+                "apply_url": apply_url,
 
                 "posted_date": posted_date
             })
